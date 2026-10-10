@@ -1,0 +1,16 @@
+[
+  {
+    "modid": "appliedcooking",
+    "name": "Applied Cooking",
+    "description": "A mod to bridge Cooking For Blockheads with Applied Energistics 2",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "",
+    "updateUrl": "",
+    "authorList": ["ItsSebastrn"],
+    "credits": "",
+    "logoFile": "logo.png",
+    "screenshots": [],
+    "dependencies": ["appliedenergistics2", "cookingforblockheads"]
+  }
+]

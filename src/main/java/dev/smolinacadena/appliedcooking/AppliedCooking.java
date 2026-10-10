@@ -1,42 +1,41 @@
 package dev.smolinacadena.appliedcooking;
 
-import dev.smolinacadena.appliedcooking.compat.Compat;
-import dev.smolinacadena.appliedcooking.compat.theoneprobe.TheOneProbeAddon;
-import dev.smolinacadena.appliedcooking.item.group.MainCreativeModeTab;
-import dev.smolinacadena.appliedcooking.setup.ClientSetup;
-import dev.smolinacadena.appliedcooking.setup.CommonSetup;
-import net.blay09.mods.balm.api.Balm;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
+import dev.smolinacadena.appliedcooking.proxy.CommonProxy;
+import dev.smolinacadena.appliedcooking.tile.KitchenStationTileEntity;
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
-@Mod(AppliedCooking.ID)
-public final class AppliedCooking {
-    public static final String ID = "appliedcooking";
-    public static final CreativeModeTab CREATIVE_MODE_TAB = new MainCreativeModeTab(AppliedCooking.ID);
+@Mod(modid = AppliedCooking.MOD_ID, name = AppliedCooking.NAME, version = AppliedCooking.VERSION,
+        acceptedMinecraftVersions = "[1.12.2]",
+        dependencies = "required-after:appliedenergistics2;required-after:cookingforblockheads")
+public class AppliedCooking {
 
-    public AppliedCooking() {
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-            FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientSetup::onModelBake);
-        });
+    public static final String MOD_ID = "appliedcooking";
+    public static final String NAME = "Applied Cooking";
+    public static final String VERSION = "1.0.3";
 
-        AppliedCookingBlocks.register();
-        AppliedCookingItems.register();
-        AppliedCookingLootFunctions.register();
+    @Mod.Instance(MOD_ID)
+    public static AppliedCooking instance;
 
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(CommonSetup::onCommonSetup);
-        FMLJavaModLoadingContext.get().getModEventBus().addGenericListener(BlockEntityType.class, CommonSetup::onRegisterBlockEntities);
+    @SidedProxy(clientSide = "dev.smolinacadena.appliedcooking.proxy.ClientProxy",
+            serverSide = "dev.smolinacadena.appliedcooking.proxy.CommonProxy")
+    public static CommonProxy proxy;
 
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::enqueueIMC);
-    }
-
-    private void enqueueIMC(InterModEnqueueEvent event) {
-        if (Balm.isModLoaded(Compat.THEONEPROBE)) {
-            TheOneProbeAddon.register();
+    public static final CreativeTabs CREATIVE_TAB = new CreativeTabs(MOD_ID) {
+        @Override
+        public ItemStack createIcon() {
+            return new ItemStack(ModBlocks.KITCHEN_STATION);
         }
+    };
+
+    @Mod.EventHandler
+    public void preInit(FMLPreInitializationEvent event) {
+        GameRegistry.registerTileEntity(KitchenStationTileEntity.class, new ResourceLocation(MOD_ID, "kitchen_station"));
+        proxy.preInit(event);
     }
 }

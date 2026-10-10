@@ -1,0 +1,3 @@
+itemGroup.appliedcooking=Applied Cooking
+tile.appliedcooking:kitchen_station.name=ME Kitchen Station
+tooltip.appliedcooking:kitchen_station.description=Station node that connects to Applied Energistics 2 grids

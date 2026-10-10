@@ -1,36 +1,39 @@
 {
   "variants": {
-    "facing=east,connected=false": {
-      "model": "appliedcooking:block/kitchen_station",
+    "connected=false,facing=east": {
+      "model": "appliedcooking:kitchen_station",
       "y": 90
     },
-    "facing=east,connected=true": {
-      "model": "appliedcooking:block/kitchen_station_connected",
+    "connected=true,facing=east": {
+      "model": "appliedcooking:kitchen_station_connected",
       "y": 90
     },
-    "facing=north,connected=false": {
-      "model": "appliedcooking:block/kitchen_station",
+    "connected=false,facing=north": {
+      "model": "appliedcooking:kitchen_station",
       "y": 0
     },
-    "facing=north,connected=true": {
-      "model": "appliedcooking:block/kitchen_station_connected",
+    "connected=true,facing=north": {
+      "model": "appliedcooking:kitchen_station_connected",
       "y": 0
     },
-    "facing=south,connected=false": {
-      "model": "appliedcooking:block/kitchen_station",
+    "connected=false,facing=south": {
+      "model": "appliedcooking:kitchen_station",
       "y": 180
     },
-    "facing=south,connected=true": {
-      "model": "appliedcooking:block/kitchen_station_connected",
+    "connected=true,facing=south": {
+      "model": "appliedcooking:kitchen_station_connected",
       "y": 180
     },
-    "facing=west,connected=false": {
-      "model": "appliedcooking:block/kitchen_station",
+    "connected=false,facing=west": {
+      "model": "appliedcooking:kitchen_station",
       "y": 270
     },
-    "facing=west,connected=true": {
-      "model": "appliedcooking:block/kitchen_station_connected",
+    "connected=true,facing=west": {
+      "model": "appliedcooking:kitchen_station_connected",
       "y": 270
+    },
+    "inventory": {
+      "model": "appliedcooking:kitchen_station"
     }
   }
 }

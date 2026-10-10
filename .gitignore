@@ -17,6 +17,11 @@ out
 build
 .gradle
 
+# nix / direnv
+.direnv
+result
+result-*
+
 # other
 eclipse
 run

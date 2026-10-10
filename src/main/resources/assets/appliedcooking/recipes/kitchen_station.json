@@ -10,25 +10,30 @@
       "item": "cookingforblockheads:toaster"
     },
     "b": {
-      "item": "ae2:chest"
+      "item": "appliedenergistics2:chest"
     },
     "c": {
       "item": "cookingforblockheads:milk_jar"
     },
     "d": {
-      "item": "ae2:fluix_glass_cable"
+      "item": "appliedenergistics2:part",
+      "data": 16
     },
     "e": {
-      "item": "ae2:cell_component_16k"
+      "item": "appliedenergistics2:material",
+      "data": 37
     },
     "f": {
-      "item": "ae2:engineering_processor"
+      "item": "appliedenergistics2:material",
+      "data": 24
     },
     "g": {
-      "item": "cookingforblockheads:crafting_book"
+      "item": "cookingforblockheads:recipe_book",
+      "data": 2
     },
     "h": {
-      "item": "cookingforblockheads:no_filter_edition"
+      "item": "cookingforblockheads:recipe_book",
+      "data": 0
     }
   },
   "result": {

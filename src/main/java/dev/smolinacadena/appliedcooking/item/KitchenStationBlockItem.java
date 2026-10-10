@@ -1,34 +1,38 @@
 package dev.smolinacadena.appliedcooking.item;
 
-import appeng.api.features.IGridLinkableHandler;
-import dev.smolinacadena.appliedcooking.block.KitchenStationBlock;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ItemStack;
+import appeng.api.features.INetworkEncodable;
+import dev.smolinacadena.appliedcooking.AppliedCooking;
+import net.minecraft.block.Block;
+import net.minecraft.item.ItemBlock;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 
-public class KitchenStationBlockItem extends BlockItem {
-
-    public static final IGridLinkableHandler LINKABLE_HANDLER = new LinkableHandler();
+public class KitchenStationBlockItem extends ItemBlock implements INetworkEncodable {
 
     public static final String TAG_GRID_KEY = "gridKey";
 
-    public KitchenStationBlockItem(KitchenStationBlock block, Properties builder) {
-        super(block, builder);
+    public KitchenStationBlockItem(Block block) {
+        super(block);
+        setMaxStackSize(1);
+        setCreativeTab(AppliedCooking.CREATIVE_TAB);
     }
 
-    private static class LinkableHandler implements IGridLinkableHandler {
-        @Override
-        public boolean canLink(ItemStack stack) {
-            return stack.getItem() instanceof KitchenStationBlockItem;
+    @Override
+    public String getEncryptionKey(ItemStack item) {
+        NBTTagCompound tag = item.getTagCompound();
+        if (tag != null && tag.hasKey(TAG_GRID_KEY)) {
+            return String.valueOf(tag.getLong(TAG_GRID_KEY));
         }
+        return "";
+    }
 
-        @Override
-        public void link(ItemStack itemStack, long securityKey) {
-            itemStack.getOrCreateTag().putLong(TAG_GRID_KEY, securityKey);
+    @Override
+    public void setEncryptionKey(ItemStack item, String encKey, String name) {
+        NBTTagCompound tag = item.getTagCompound();
+        if (tag == null) {
+            tag = new NBTTagCompound();
+            item.setTagCompound(tag);
         }
-
-        @Override
-        public void unlink(ItemStack itemStack) {
-            itemStack.removeTagKey(TAG_GRID_KEY);
-        }
+        tag.setLong(TAG_GRID_KEY, Long.parseLong(encKey));
     }
 }
