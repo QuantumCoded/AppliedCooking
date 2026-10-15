@@ -20,6 +20,8 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
 
 import javax.annotation.Nullable;
@@ -96,6 +98,18 @@ public class KitchenStationTileEntity extends TileEntity implements ITickable {
             }
             stack.getTagCompound().setLong(KitchenStationBlockItem.TAG_GRID_KEY, gridKey);
         }
+    }
+
+    /**
+     * Forge's default implementation returns {@code oldState != newState} (a reference
+     * comparison) for non-vanilla tile entities, so any same-block state change discards this
+     * tile entity and silently drops {@link #gridKey}. {@link #setConnected} changes the block
+     * state on the same block, which therefore wiped the linked key right after placement.
+     * Keep the tile entity unless the block itself actually changes.
+     */
+    @Override
+    public boolean shouldRefresh(World world, BlockPos pos, IBlockState oldState, IBlockState newState) {
+        return oldState.getBlock() != newState.getBlock();
     }
 
     public void setConnected(boolean connected) {
