@@ -1,0 +1,170 @@
+name: Release
+
+# Push a tag like v1.12.2-1.0.4 to cut a release, or use the "Run workflow"
+# button to build without publishing (a dry run).
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build, e.g. 1.12.2-1.0.4 (blank = the default in build.gradle)'
+        required: false
+        type: string
+      publish:
+        description: 'Publish a GitHub release for this build'
+        required: false
+        type: boolean
+        default: false
+
+# Needed for the release step to create a release with the built-in token.
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          # Full history so tag/commit context is available to the release step.
+          fetch-depth: 0
+
+      # Minecraft 1.12.2 / ForgeGradle 2.3 require Java 8. The runner's default
+      # JDK (17/21) cannot run this build.
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      # ForgeGradle pulls ~400 MB (Forge, MCP mappings, deobfuscated Minecraft)
+      # into ~/.gradle on a cold cache. Restoring it keeps a release to a couple
+      # of minutes instead of re-downloading every time.
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties', 'build.gradle', 'gradle.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      # The tag is the single source of truth for the version: v1.12.2-1.0.4
+      # becomes the version 1.12.2-1.0.4, which names the jar and is written
+      # into mcmod.info.
+      - name: Resolve version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "$INPUT_VERSION" ]; then
+            VERSION="$INPUT_VERSION"
+          elif [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION=""
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building version: ${VERSION:-<default from build.gradle>}"
+
+      - name: Build
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          if [ -n "$VERSION" ]; then
+            ./gradlew clean build -Pmod_version="$VERSION"
+          else
+            ./gradlew clean build
+          fi
+
+      - name: Locate jar
+        id: jar
+        run: |
+          JAR=$(find build/libs -maxdepth 1 -name 'appliedcooking-*.jar' ! -name '*-sources.jar' | head -n1)
+          if [ -z "$JAR" ]; then
+            echo "::error::No mod jar found in build/libs"
+            ls -la build/libs
+            exit 1
+          fi
+          echo "path=$JAR" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$JAR")" >> "$GITHUB_OUTPUT"
+          echo "sha256: $(sha256sum "$JAR" | cut -d' ' -f1)"
+
+      # Guard the failure mode documented in modding/MODDING.md: `build` can
+      # leave a jar with MCP names, which loads in the dev client but crashes a
+      # real pack with NoSuchMethodError. A reobfuscated jar is full of
+      # func_/field_ names; a raw one has none. Never publish a raw jar.
+      - name: Verify reobfuscated
+        env:
+          JAR: ${{ steps.jar.outputs.path }}
+        run: |
+          COUNT=$(unzip -p "$JAR" '*.class' | strings | grep -cE 'func_[0-9]' || true)
+          echo "SRG method references found: $COUNT"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::$JAR has no SRG names - it is not reobfuscated and will crash a real pack."
+            exit 1
+          fi
+
+      # The tag, the jar name, and the in-jar metadata must agree, otherwise the
+      # released jar reports a version that does not match its tag.
+      - name: Verify version
+        env:
+          JAR: ${{ steps.jar.outputs.path }}
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          [ -n "$VERSION" ] || { echo "No explicit version to check against."; exit 0; }
+          # `|| true` so a missing/absent field falls through to the explicit
+          # comparison below and reports which file disagreed, rather than
+          # aborting the step on grep's non-zero exit.
+          PROPS=$(unzip -p "$JAR" version.properties 2>/dev/null | grep '^appliedcooking.version=' | cut -d= -f2 || true)
+          INFO=$(unzip -p "$JAR" mcmod.info 2>/dev/null | grep -o '"version": *"[^"]*"' | cut -d'"' -f4 || true)
+          echo "expected=$VERSION version.properties=$PROPS mcmod.info=$INFO"
+          [ "$PROPS" = "$VERSION" ] || { echo "::error::version.properties says '$PROPS', expected '$VERSION'"; exit 1; }
+          [ "$INFO" = "$VERSION" ] || { echo "::error::mcmod.info says '$INFO', expected '$VERSION'"; exit 1; }
+
+      # Always keep the jar as a workflow artifact, so a dry run or a failed
+      # release still leaves you with a downloadable build.
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.jar.outputs.name }}
+          path: build/libs/appliedcooking-*.jar
+          if-no-files-found: error
+
+      - name: Publish release
+        if: github.ref_type == 'tag' || inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.value }}
+          JAR: ${{ steps.jar.outputs.path }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            # The tag already exists; it is the release anchor.
+            TAG="$GITHUB_REF_NAME"
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --generate-notes \
+              "$JAR"
+          else
+            if [ -z "$VERSION" ]; then
+              echo "::error::Set the 'version' input when publishing from a manual run"
+              exit 1
+            fi
+            # No tag yet, so create it at the commit that was built.
+            TAG="v$VERSION"
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --generate-notes \
+              --target "$GITHUB_SHA" \
+              "$JAR"
+          fi

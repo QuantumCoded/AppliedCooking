@@ -11,7 +11,9 @@ buildscript {
 
 apply plugin: 'net.minecraftforge.gradle.forge'
 
-version = '1.0.3'
+// Release CI passes the version in from the git tag: `./gradlew build -Pmod_version=1.12.2-1.0.4`.
+// Falls back to the checked-in default for local builds.
+version = project.findProperty('mod_version') ?: '1.0.3'
 group = 'dev.smolinacadena'
 archivesBaseName = 'appliedcooking'
 
@@ -42,11 +44,13 @@ processResources {
 
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'
+        include 'version.properties'
         expand 'version': project.version, 'mcversion': project.minecraft.version
     }
 
     from(sourceSets.main.resources.srcDirs) {
         exclude 'mcmod.info'
+        exclude 'version.properties'
     }
 }
 

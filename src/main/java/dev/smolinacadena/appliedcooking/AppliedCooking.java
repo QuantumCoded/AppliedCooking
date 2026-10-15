@@ -10,14 +10,17 @@ import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 
-@Mod(modid = AppliedCooking.MOD_ID, name = AppliedCooking.NAME, version = AppliedCooking.VERSION,
+// The version deliberately has no default here: FML resolves it from
+// version.properties, which the build expands from the Gradle `version` (and
+// therefore from the git tag in CI). Setting it here too would pin it to a
+// stale literal and make FML ignore version.properties.
+@Mod(modid = AppliedCooking.MOD_ID, name = AppliedCooking.NAME,
         acceptedMinecraftVersions = "[1.12.2]",
         dependencies = "required-after:appliedenergistics2;required-after:cookingforblockheads")
 public class AppliedCooking {
 
     public static final String MOD_ID = "appliedcooking";
     public static final String NAME = "Applied Cooking";
-    public static final String VERSION = "1.0.3";
 
     @Mod.Instance(MOD_ID)
     public static AppliedCooking instance;
