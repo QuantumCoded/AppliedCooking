@@ -7,7 +7,9 @@ import appeng.api.networking.IGridNode;
 import appeng.api.networking.security.IActionHost;
 import appeng.api.networking.storage.IStorageGrid;
 import appeng.api.storage.IMEMonitor;
+import appeng.api.storage.channels.IFluidStorageChannel;
 import appeng.api.storage.channels.IItemStorageChannel;
+import appeng.api.storage.data.IAEFluidStack;
 import appeng.api.storage.data.IAEItemStack;
 import dev.smolinacadena.appliedcooking.ModBlocks;
 import dev.smolinacadena.appliedcooking.api.cookingforblockheads.capability.KitchenItemProvider;
@@ -60,6 +62,26 @@ public class KitchenStationTileEntity extends TileEntity implements ITickable {
 
     @Nullable
     public IMEMonitor<IAEItemStack> getNetworkStorage() {
+        IStorageGrid storageGrid = getStorageGrid();
+        if (storageGrid == null) {
+            return null;
+        }
+
+        return storageGrid.getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class));
+    }
+
+    @Nullable
+    public IMEMonitor<IAEFluidStack> getFluidStorage() {
+        IStorageGrid storageGrid = getStorageGrid();
+        if (storageGrid == null) {
+            return null;
+        }
+
+        return storageGrid.getInventory(AEApi.instance().storage().getStorageChannel(IFluidStorageChannel.class));
+    }
+
+    @Nullable
+    private IStorageGrid getStorageGrid() {
         IActionHost actionHost = getActionHost();
         if (actionHost == null) {
             return null;
@@ -75,12 +97,7 @@ public class KitchenStationTileEntity extends TileEntity implements ITickable {
             return null;
         }
 
-        IStorageGrid storageGrid = grid.getCache(IStorageGrid.class);
-        if (storageGrid == null) {
-            return null;
-        }
-
-        return storageGrid.getInventory(AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class));
+        return grid.getCache(IStorageGrid.class);
     }
 
     public void applyDataFromItemToBlockEntity(ItemStack stack) {
